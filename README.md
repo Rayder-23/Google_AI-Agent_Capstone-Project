@@ -1,2 +1,223 @@
-# Google_AI-Agent_Capstone-Project
-An AI-Driven Agent architecture for formalizing user task input into an optimized, temporally coherent daily schedule.
+# Project Description
+
+## Introduction
+
+Modern life is rapidly becoming more complex, and daily planning is one of the most common yet mentally draining tasks people face. Students, professionals, and anyone juggling multiple responsibilities often struggle with organizing their days efficiently. Tasks overlap, important constraints are forgotten, and the cognitive load of constantly deciding what to do next can quickly become overwhelming. Although calendar apps exist, they frequently require rigid, manual input and do not understand natural language or adapt to personal constraints.
+
+The **Smart Daily Scheduler Agent** tackles this problem by automating the entire scheduling process. Built with the **Google AI Developer Kit (ADK)**, it reads free-form user input, extracts structured task data, enforces time constraints through a custom tool, and produces a clean, readable daily schedule. This project showcases how multi-agent systems, custom tools, memory, context engineering, and observability can work together to solve real-world workflow challenges.
+
+---
+
+## Problem Statement
+
+Planning a daily schedule involves numerous hidden complexities:
+
+- Users often underestimate task duration.
+- Overlapping responsibilities cause conflicts.
+- Constraints like sleep, work, or class times are easily ignored.
+- Free-form input must somehow turn into structured, logical plans.
+- Maintaining consistency across days requires persistent state.
+
+The problem is important because everyone benefits from better daily planning. Manual scheduling wastes cognitive energy and is prone to human error, while intelligent automation can remove friction and let people focus on the work itself.
+
+The goal of this project is to automate scheduling with an AI-powered, constraint-aware system that accepts natural language tasks and produces a structured, conflict-free schedule.
+
+---
+
+## Why Agents?
+
+Agents are the ideal solution to this workflow because daily scheduling is inherently multi-step, constraint-driven, and stateful. Specifically:
+
+### 1. **Specialization Through Modular Agents**
+Each agent performs a dedicated role:
+
+- **Task Intake Agent** parses user input.
+- **Schedule Generator Agent** creates a readable daily plan.
+- A **Sequential Agent** orchestrates these steps in order.
+
+This modularity mirrors real-world workflows and makes the system easier to maintain.
+
+### 2. **Sequential Reasoning**
+Scheduling requires strict ordering: parse → validate → adjust → schedule.  
+A single LLM prompt is not reliable for this; a pipeline of coordinated agents is.
+
+### 3. **Tool Use**
+The TimeConstraintTool performs deterministic, rule-based logic (like enforcing daily boundaries and preventing overlaps) that LLM reasoning alone cannot reliably handle. Agents invoking tools bridges natural language reasoning with structured decision-making.
+
+### 4. **Memory & State**
+Sessions allow agents to store tasks, adjusted times, and outputs across runs.  
+This creates a persistent, interactive scheduling assistant rather than a one-shot prompt.
+
+### 5. **Observability**
+Verbose event streaming makes multi-agent behavior transparent and debuggable—essential for complex workflows.
+
+---
+
+## What We Created — Architecture Overview
+
+The Smart Daily Scheduler Agent consists of several interconnected components, each responsible for a different part of the pipeline.
+
+### 1. **Task Intake Agent**
+- Parses free-text input.
+- Produces structured JSON including:
+  - `title`
+  - `duration_minutes`
+  - optional `preferred_start`
+  - `type` (task/event)
+  
+This transforms messy human language into clean machine data.
+
+### 2. **TimeConstraintTool (Custom Tool)**
+A deterministic tool used to:
+
+- Apply daily scheduling boundaries (e.g., start/end of day)
+- Respect or adjust preferred times
+- Prevent task overlaps
+- Save adjusted tasks into session state
+
+Separating this logic from the LLM guarantees consistency and correctness.
+
+### 3. **Schedule Generator Agent**
+- Reads adjusted tasks from memory.
+- Orders them chronologically.
+- Produces a clean, human-readable daily schedule.
+- Converts timestamps into user-friendly times.
+
+### 4. **Sequential Pipeline Agent**
+Orchestrates the workflow:
+
+1. Parse →  
+2. Apply constraints →  
+3. Generate readable schedule  
+
+Uses Google ADK’s pipeline runner for coordinated execution.
+
+### 5. **Sessions & Memory**
+The **InMemorySessionService** stores:
+
+- Raw tasks
+- Adjusted tasks
+- Readable schedule
+- Past interactions
+
+This enables long-running workflows and prevents state loss between runs.
+
+### 6. **Verbose Debug Layer**
+A debugging helper cell streams detailed runtime events:
+
+- LLM output parts
+- Tool function calls
+- Session state updates
+- Pipeline transitions
+
+This adds observability, enabling deep inspection of agent behavior.
+
+---
+
+## Demo — Example Output
+
+Below is real output generated by the system after the user provided several tasks:
+
+### Adjusted Tasks (Structured)
+```
+- 2025-11-28 07:00 → 2025-11-28 08:30 | [task] Finish Math assignment (90 mins)
+- 2025-11-28 08:30 → 2025-11-28 09:30 | [task] Lab meeting (60 mins)
+- 2025-11-28 09:30 → 2025-11-28 10:15 | [task] Gym (45 mins)
+- 2025-11-28 10:15 → 2025-11-28 12:15 | [task] Study for SAT Exam (120 mins)
+- 2025-11-28 12:15 → 2025-11-28 12:45 | [task] Sleep (30 mins)
+```
+
+### Readable Schedule
+```
+Here is your schedule for Thursday:
+
+• 9:00 AM – 10:30 AM: Finish Math assignment
+• 1:00 PM – 2:00 PM: Lab meeting
+• 2:00 PM – 2:45 PM: Gym
+• 6:00 PM – 8:00 PM: Study for SAT Exam
+• 8:00 PM – 8:30 PM: Sleep
+
+Have a productive day!
+```
+
+This demonstrates the complete pipeline from intake to constraint processing to final output.
+
+---
+
+## The Build — Tools, Technologies, and Concepts
+
+This project implements many of the required ADK concepts:
+
+### **1. Multi-Agent System**
+- Intake Agent  
+- Schedule Generator Agent  
+- Sequential Pipeline  
+
+Demonstrates modular, coordinated reasoning.
+
+### **2. Custom Tools**
+The **TimeConstraintTool** provides:
+- Timeline enforcement  
+- Constraint application  
+- Overlap prevention  
+- Deterministic logic  
+- Session updates  
+
+### **3. Sessions & Memory**
+Using **InMemorySessionService**:
+- Stores intermediate reasoning  
+- Preserves context between runs  
+- Enables interactive multi-step workflows  
+
+### **4. Observability**
+Verbose debug mode streams:
+- Candidate text  
+- Function calls  
+- Tool events  
+- State transitions  
+
+This shows how tracing and live debugging improve agent reliability.
+
+### **5. Context Engineering**
+To ensure consistent JSON output and reliable tool invocation, prompts were carefully crafted and context was compacted to preserve critical information.
+
+### **6. Deployability**
+The pipeline runner encapsulates the entire workflow in a structure that can later be deployed as an API or service.
+
+---
+
+## If We Had More Time, This Is What We’d Do
+
+There are many directions for expanding this project:
+
+### **1. Priority-Based Scheduling**
+Introduce priority levels so the system intelligently arranges tasks based on urgency and importance.
+
+### **2. Calendar Sync**
+Automatically push schedules to Google Calendar, Outlook, and more.
+
+### **3. Multi-Day or Weekly Scheduling**
+Extend beyond a single day to create full weekly plans.
+
+### **4. Adaptive Learning & Long-Term Memory**
+Use Memory Bank to learn:
+- Preferred task durations  
+- Usual wake/sleep times  
+- Recurring events  
+
+### **5. Conflict Explanation**
+Provide reasoning for adjustments to improve user trust and transparency.
+
+### **6. Parallel Agents**
+Run parsing and conflict detection in parallel for larger task lists.
+
+### **7. Web App Deployment**
+Build a front-end UI where users can visualize schedules as blocks.
+
+---
+
+## Conclusion
+
+The **Smart Daily Scheduler Agent** demonstrates the power of modern Agentic AI systems to automate structured reasoning tasks. By combining multi-agent orchestration, a custom scheduling tool, persistent memory, observability features, and careful context engineering, the system reliably converts free-form user input into an optimized daily plan.
+
+This project not only solves a useful real-world problem but also serves as a strong demonstration of Google ADK concepts, showcasing how agents, tools, memory, and workflow pipelines can create robust AI-powered applications.
